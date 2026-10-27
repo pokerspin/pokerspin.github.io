@@ -1,0 +1,16 @@
+{
+  "name": "Poker Spin Trainer",
+  "short_name": "Spin Trainer",
+  "description": "Entraîneur de ranges Spin, 3-way et heads-up, de 5 à 25 BB.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f1613",
+  "theme_color": "#0f1613",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
