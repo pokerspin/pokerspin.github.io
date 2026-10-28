@@ -165,7 +165,7 @@ details.filters summary span{color:var(--muted);font-weight:400}
 .series-start .lad-b{display:flex;flex-direction:row;gap:8px;flex:1 1 100%}.lad-b>button{flex:1 1 0;min-width:0;margin:0}
 .lad-opt{display:flex;align-items:center;gap:8px;flex:1 1 100%;font-size:.84rem;cursor:pointer}
 .lad-opt input{width:18px;height:18px;accent-color:#e0b04a;margin:0}
-.series-start .lad-opt span{font-size:.84rem;color:var(--ink)}
+.lad-opt{margin-top:8px}.lad-opt span{font-size:.84rem;color:var(--fg)}
 .lad-steps{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .lad-steps span{padding:3px 8px;border-radius:999px;border:1px solid var(--line);font:600 .72rem var(--font-mono);color:var(--muted);white-space:nowrap}
 .lad-steps span.done{opacity:.45}
@@ -627,7 +627,7 @@ I18N.en.t={
 "Réussite":"Accuracy","Mains jouées":"Hands played","Série":"Streak","Record":"Best","Spots travaillés":"Spots trained","Catégories":"Categories","Position":"Position","Profondeur":"Stack depth",
 "Mode":"Mode","Mains utiles":"Useful hands","Toutes les mains":"All hands","Mes points faibles":"My weak spots","Chrono":"Timer","Sans":"Off","Mode RNG":"RNG mode","Non":"No","Oui":"Yes",
 "Sur une main mixte, un nombre de 0 à 99 tiré au hasard dit quelle action jouer cette fois-ci, comme un pro qui suit ses fréquences.":"On a mixed hand, a random number from 0 to 99 tells you which action to play this time, like a pro following their frequencies.",
-"Série de 100 mains":"100-hand series","Échelle de tapis":"Stack ladder","La même situation à chaque profondeur : regarde ta range s'ouvrir ou se resserrer.":"The same situation at every depth: watch your range open up or tighten.","Tapis qui baisse":"Stack going down","Même main à chaque tapis":"Same hand at every stack","même main":"same hand","Tapis qui monte":"Stack going up","Un bilan à la fin, puis tu rejoues les spots où tu t'es le plus trompé.":"A report at the end, then you replay the spots you missed most.","Lancer la série":"Start series","Arrêter":"Stop",
+"Série de 100 mains":"100-hand series","Échelle de tapis":"Stack ladder","La même situation à chaque profondeur : regarde ta range s'ouvrir ou se resserrer.":"The same situation at every depth: watch your range open up or tighten.","Tapis qui baisse":"Stack going down","Série de mains":"Hand series","Libre":"Free play","Même main à chaque tapis":"Same hand at every stack","même main":"same hand","Tapis qui monte":"Stack going up","Un bilan à la fin, puis tu rejoues les spots où tu t'es le plus trompé.":"A report at the end, then you replay the spots you missed most.","Lancer la série":"Start series","Arrêter":"Stop",
 "Main suivante ↵":"Next hand ↵","Voir le bilan ↵":"See report ↵","Remettre les stats à zéro":"Reset stats","Que veulent dire ces actions ?":"What do these actions mean?",
 "Juste":"Correct","Juste, main mixte":"Correct, mixed hand","Raté":"Wrong","Temps écoulé":"Time's up","Toi :":"You:","Toi":"You",
 "Premier à parler, 3 joueurs à la table.":"First to act, 3 players at the table.","Le BTN a foldé, tu es face à la BB.":"The BTN folded, you face the BB.",
@@ -783,7 +783,7 @@ I18N.en.r=[
  [/^(.+) buy-ins · ROI (.+) %$/,'$1 buy-ins · ROI $2%'],
  [/^(\d+) all-in avec cartes montrées pris en compte\. Tu as (gagné|perdu) (.+) de (plus|moins) que ta cEV : c'est la part de chance\. La courbe cEV montre la qualité de tes décisions\.$/,
    (m,n,g,x,pl)=>`${n} all-ins with shown cards counted. You ${g==='gagné'?'won':'lost'} ${x} ${pl==='plus'?'more':'less'} than your cEV: that is the luck part. The cEV line shows the quality of your decisions.`],
- [/^Après (\d+) tournois?(?: \(moyenne\))?$/,(m,n)=>`After ${n} tournaments`+(m.includes('moyenne')?' (average)':'')],[/^Main (\d+) sur (\d+)$/,'Hand $1 of $2'],[/^(\d+) tournois$/,'$1 tournaments'],[/^(\d+) mains$/,'$1 hands'],
+ [/^Après (\d+) tournois?(?: \(moyenne\))?$/,(m,n)=>`After ${n} tournaments`+(m.includes('moyenne')?' (average)':'')],[/^Main (\d+) sur (\d+)$/,'Hand $1 of $2'],[/^Série de (\d+) mains terminée$/,'$1-hand series done'],[/^Nouvelle série de (\d+)$/,'New $1-hand series'],[/^(\d+) tournois$/,'$1 tournaments'],[/^(\d+) mains$/,'$1 hands'],
  [/^Que veut dire (.+) \?$/,(m,x)=>`What does ${T_(x)} mean?`],
  [/^Sauvegarde du (.+) : (\d+) mains? d'entraînement, (\d+) erreurs? suivies?, (\d+) mains? importées?\. Touche « Confirmer » pour remplacer les données de ce téléphone\.$/,'Backup from $1: $2 training hands, $3 tracked mistakes, $4 imported hands. Tap « Confirm » to replace the data on this phone.'],
  [/^([\d.,]+) ?% d'équité contre la range du reg, il en faut ([\d.,]+) ?%\.$/,"$1% equity against the reg's range, you need $2%."],
@@ -925,20 +925,15 @@ window.PST_PAY=(()=>{
         <div><div class="flabel">Ta position</div><div class="chips" id="f-pos"></div></div>
         <div><div class="flabel">Profondeur</div><div class="chips" id="f-bb"></div></div>
         <div><div class="flabel">Mode</div><div class="chips" id="f-mode"></div></div>
+        <div><div class="flabel">Série de mains</div><div class="chips" id="f-series"></div><p class="note2" style="margin:6px 0 0">Un bilan à la fin, puis tu rejoues les spots où tu t'es le plus trompé.</p></div>
+        <div><div class="flabel">Échelle de tapis</div><div class="chips" id="f-lad"></div>
+          <label class="lad-opt"><input type="checkbox" id="lad-same"><span>Même main à chaque tapis</span></label>
+          <p class="note2" style="margin:6px 0 0">La même situation à chaque profondeur : regarde ta range s'ouvrir ou se resserrer.</p></div>
         <div><div class="flabel">Chrono</div><div class="chips" id="f-clock"></div></div>
         <div><div class="flabel">Mode RNG</div><div class="chips" id="f-rng"></div><p class="note2" style="margin:6px 0 0">Sur une main mixte, un nombre de 0 à 99 tiré au hasard dit quelle action jouer cette fois-ci, comme un pro qui suit ses fréquences.</p></div>
       </div>
     </details>
 
-    <div class="series-start" id="series-start">
-      <div><b>Série de 100 mains</b><span>Un bilan à la fin, puis tu rejoues les spots où tu t'es le plus trompé.</span></div>
-      <button class="next" id="series-go">Lancer la série</button>
-    </div>
-    <div class="series-start" id="lad-start">
-      <div><b>Échelle de tapis</b><span>La même situation à chaque profondeur : regarde ta range s'ouvrir ou se resserrer.</span></div>
-      <div class="lad-b"><button class="next" id="lad-down">25 → 5 BB</button><button class="next" id="lad-up">5 → 25 BB</button></div>
-      <label class="lad-opt"><input type="checkbox" id="lad-same"><span>Même main à chaque tapis</span></label>
-    </div>
     <div class="series-bar" id="lad-bar" hidden>
       <div class="sb-top"><b id="lad-label"></b><span id="lad-n"></span><button class="ghost" id="lad-stop">Arrêter</button></div>
       <div class="lad-steps" id="lad-steps"></div>
@@ -1575,7 +1570,7 @@ function ladSpot(){let L=st.ladder;
     if(L.same){L.i++;L.fresh=true;if(L.i>=L.steps.length){L.i=0;L.n++;L.hand=null}if(L.n>=LAD_N)L=st.ladder=ladNew(L.dir)}
     else{L.n++;if(L.n>=LAD_N){L.n=0;L.i++;L.fresh=true}if(L.i>=L.steps.length)L=st.ladder=ladNew(L.dir)}}
   const[cat,spot]=L.key.split('|');return SPOTS.find(s=>s.cat===cat&&s.spot===spot&&s.bb===L.steps[L.i])||pickSpot()}
-function renderLadder(){const L=st.ladder;$('lad-start').hidden=!!L;$('lad-bar').hidden=!L;if(!L)return;
+function renderLadder(){const L=st.ladder;renderRunChips();$('lad-bar').hidden=!L;if(!L)return;
   const[cat,spot]=L.key.split('|'),s=SPOTS.find(x=>x.cat===cat&&x.spot===spot);
   $('lad-label').textContent=(L.dir==='down'?'Tapis qui baisse':'Tapis qui monte')+' · '+catLabel(cat)+' · '+spotLabel(cat,spot)+(L.same?' · même main':'');
   $('lad-n').textContent=`Main ${L.n+1} sur ${LAD_N}`;
@@ -1632,8 +1627,13 @@ function newHand(){
   $('feedback').hidden=true;$('next').hidden=true;
   startClock();
 }
-$('lad-down').onclick=()=>{st.ladder=ladNew('down');save();newHand()};
-$('lad-up').onclick=()=>{st.ladder=ladNew('up');save();newHand()};
+/* séries et échelle : dans « Spots travaillés », à côté du mode */
+function renderRunChips(){if(!$('f-series'))return;
+  const plain=st.series&&st.series.type==='100';
+  chipGroup($('f-series'),[[0,'Libre'],[30,'30 mains'],[50,'50 mains'],[100,'100 mains']],v=>v===0?!plain:!!plain&&st.series.total===v,
+    v=>{if(v===0){if(plain){st.series=null;save();$('next').textContent='Main suivante ↵';renderSeries()}return}ac();$('filters').open=false;startSeries('100',v)});
+  chipGroup($('f-lad'),[['','Non'],['down','25 → 5 BB'],['up','5 → 25 BB']],v=>v===''?!st.ladder:!!st.ladder&&st.ladder.dir===v,
+    v=>{if(v===''){st.ladder=null;save();renderLadder();return}st.ladder=ladNew(v);save();$('filters').open=false;newHand()})}
 $('lad-stop').onclick=()=>{st.ladder=null;save();renderLadder()};
 $('lad-same').checked=!!st.ladSame;$('lad-same').onchange=e=>{st.ladSame=e.target.checked;save()};
 /* chrono : le temps écoulé compte comme une erreur */
@@ -1715,15 +1715,15 @@ function spread(deck){const out=[],rest=deck.slice();
   return out}
 function pickRevSpot(){const se=st.series;const list=se.spots.map(k=>SPOTS.find(x=>x.key===k)).filter(Boolean);
   const w=list.map(s=>1+((se.miss[s.key]||[]).length));let t=Math.random()*w.reduce((a,b)=>a+b,0);for(let i=0;i<list.length;i++){t-=w[i];if(t<=0)return list[i]}return list[0]}
-function renderSeries(){const se=st.series;$('series-start').hidden=!!se;$('series-bar').hidden=!se;if(!se)return;
+function renderSeries(){const se=st.series;renderRunChips();$('series-bar').hidden=!se;if(!se)return;
   const shown=Math.min(se.done+(answered?0:1),se.total);
   $('sb-label').textContent=(se.type==='srs'?'Mes erreurs · main ':se.type==='shots'?'Mes captures · main ':se.type==='pick'?'Mains choisies · main ':se.type==='rev'?'Révision · main ':'Série · main ')+shown+' / '+se.total;
   $('sb-score').textContent=se.done?`${se.ok} juste${se.ok>1?'s':''} sur ${se.done} (${Math.round(100*se.ok/se.done)} %)`:'';
   $('sb-fill').style.width=(100*se.done/se.total)+'%'}
 function worst(se){return Object.entries(se.per).map(([k,p])=>({k,err:p.n-p.ok,n:p.n})).filter(x=>x.err>0).sort((a,b)=>b.err-a.err||(b.err/b.n)-(a.err/a.n)).slice(0,6)}
-function showSummary(){const se=st.series;$('train').classList.add('done');$('summary').hidden=false;$('series-bar').hidden=true;$('series-start').hidden=true;
+function showSummary(){const se=st.series;$('train').classList.add('done');$('summary').hidden=false;$('series-bar').hidden=true;
   const pct=Math.round(100*se.ok/se.total);
-  $('sum-kind').textContent=se.type==='srs'?'Révision de tes erreurs terminée':se.type==='shots'?'Test de tes captures terminé':se.type==='pick'?'Mains choisies terminées':se.type==='rev'?'Révision terminée':'Série de 100 mains terminée';
+  $('sum-kind').textContent=se.type==='srs'?'Révision de tes erreurs terminée':se.type==='shots'?'Test de tes captures terminé':se.type==='pick'?'Mains choisies terminées':se.type==='rev'?'Révision terminée':`Série de ${se.total} mains terminée`;$('sum-new').textContent=`Nouvelle série de ${se.type==='100'?se.total:100}`;
   $('sum-score').textContent=`${se.ok} / ${se.total}`;
   const w=worst(se);
   $('sum-sub').textContent=`${pct} % de bonnes réponses. `+(w.length?'Les spots où tu t’es le plus trompé :':'Aucune erreur, bravo !');
@@ -1731,10 +1731,9 @@ function showSummary(){const se=st.series;$('train').classList.add('done');$('su
   $('sum-rev').hidden=!w.length;
   $('sum-rev').textContent=`Rejouer ces ${w.length} spot${w.length>1?'s':''} (30 mains)`;
   if(pct>=80)sfx('ok')}
-$('series-go').onclick=()=>{ac();startSeries('100',100)};
 $('sb-stop').onclick=()=>{st.series=null;save();$('next').textContent='Main suivante ↵';renderSeries()};
 $('sum-rev').onclick=()=>{const se=st.series;const w=worst(se);const miss={};w.forEach(x=>miss[x.k]=(se.missed||{})[x.k]||[]);startSeries('rev',30,w.map(x=>x.k),miss)};
-$('sum-new').onclick=()=>startSeries('100',100);
+$('sum-new').onclick=()=>startSeries('100',st.series&&st.series.type==='100'?st.series.total:100);
 $('sum-free').onclick=()=>{st.series=null;save();$('train').classList.remove('done');$('summary').hidden=true;renderSeries();newHand()};
 document.addEventListener('keydown',e=>{if($('train').hidden)return;if(e.target.tagName==='INPUT')return;
   if(/^[1-9]$/.test(e.key)&&!answered){const b=$('answers').children[+e.key-1];if(b)b.click()}
