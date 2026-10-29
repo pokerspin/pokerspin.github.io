@@ -893,7 +893,7 @@ window.PST_PAY=(()=>{
     </div>
     <div class="setrow col" id="pay-set" hidden><span><b>Abonnement</b><small id="pay-set-d"></small></span><div><button class="next" id="pay-set-b">Tout débloquer</button></div></div>
     <div class="setrow col"><span><b>Discord</b><small>Aide, bugs, idées et nouveautés : retrouve les autres joueurs de l'appli.</small></span><div><a class="disc-btn" href="https://discord.gg/ukG5tfsUrT" target="_blank" rel="noopener">Rejoindre le Discord</a></div></div>
-    <p class="note2" style="margin:6px 0 0;text-align:center">Version 5.4.2</p>
+    <p class="note2" style="margin:6px 0 0;text-align:center">Version 5.4.3</p>
   </div>
 </div>
 <div class="wrap">
@@ -1834,7 +1834,9 @@ const RES=(()=>{
   }
   $('r-files').onchange=e=>{importFiles(e.target.files);e.target.value=''};
   $('r-dir').onchange=e=>{importFiles(e.target.files);e.target.value=''};
-  if(matchMedia('(pointer:coarse)').matches)$('r-dir-l').hidden=true;
+  /* « Choisir le dossier » : sur ordinateur, et sur iPhone/iPad (iOS 18.4 et plus) ; pas sur Android, qui ne sait pas choisir un dossier */
+  {const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+   if(window.AndroidLic||(matchMedia('(pointer:coarse)').matches&&!ios))$('r-dir-l').hidden=true}
   let clearArm=false;
   $('r-clear').onclick=()=>{if(!clearArm){clearArm=true;$('r-clear').textContent='Confirmer : tout effacer';setTimeout(()=>{clearArm=false;$('r-clear').textContent='Effacer les mains importées'},3000);return}
     db={hands:[],sums:{}};persist();clearArm=false;$('r-clear').textContent='Effacer les mains importées';$('r-status').textContent='Mains effacées.';render()};
