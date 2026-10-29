@@ -1,7 +1,7 @@
 /* Poker Spin Trainer, version web : l'appli marche sans internet une fois ouverte.
    La page est servie depuis le cache tout de suite, et mise à jour en arrière-plan
    quand il y a internet (la nouvelle version s'affiche à l'ouverture suivante). */
-const CACHE = 'pst-web-v5.4.1';   // à changer à chaque version pour que les iPhone la reçoivent
+const CACHE = 'pst-web-v5.4.2';   // à changer à chaque version pour que les iPhone la reçoivent
 const CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -22,6 +22,14 @@ self.addEventListener('fetch', e => {
   if (url.hostname === 'raw.githubusercontent.com') return;
   const isPage = req.mode === 'navigate';
   const key = isPage ? './index.html' : req;
+  // la page : d'abord en ligne (nouvelle version tout de suite), le cache seulement sans internet
+  if (isPage) {
+    e.respondWith(fetch(req).then(r => {
+      if (r && r.ok) caches.open(CACHE).then(c => c.put(key, r.clone()));
+      return r;
+    }).catch(() => caches.match(key)));
+    return;
+  }
   e.respondWith(caches.open(CACHE).then(async c => {
     const hit = await c.match(key);
     const net = fetch(req).then(r => {
