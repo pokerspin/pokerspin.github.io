@@ -893,7 +893,7 @@ window.PST_PAY=(()=>{
     </div>
     <div class="setrow col" id="pay-set" hidden><span><b>Abonnement</b><small id="pay-set-d"></small></span><div><button class="next" id="pay-set-b">Tout débloquer</button></div></div>
     <div class="setrow col"><span><b>Discord</b><small>Aide, bugs, idées et nouveautés : retrouve les autres joueurs de l'appli.</small></span><div><a class="disc-btn" href="https://discord.gg/ukG5tfsUrT" target="_blank" rel="noopener">Rejoindre le Discord</a></div></div>
-    <p class="note2" style="margin:6px 0 0;text-align:center">Version 5.4.3</p>
+    <p class="note2" style="margin:6px 0 0;text-align:center">Version 5.4.4</p>
   </div>
 </div>
 <div class="wrap">
@@ -1107,7 +1107,8 @@ window.PST_PAY=(()=>{
         <input id="r-files" type="file" multiple accept=".txt,.zip,text/plain,application/zip" hidden>
         <label class="ghost" for="r-dir" id="r-dir-l">Choisir le dossier</label>
         <input id="r-dir" type="file" webkitdirectory multiple hidden>
-        <script>if(/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1))document.getElementById('r-files').removeAttribute('accept')</script>
+        <script>/* téléphone et tablette : sans filtre de type, sinon un .zip venu du cloud (Drive, iCloud) peut être grisé ; l'appli trie elle-même */
+if(matchMedia('(pointer:coarse)').matches||/iPad|iPhone|iPod|Android/.test(navigator.userAgent))document.getElementById('r-files').removeAttribute('accept')</script>
       </div>
       <div class="imp-status" id="r-status" role="status"></div>
     </div>
@@ -1834,9 +1835,8 @@ const RES=(()=>{
   }
   $('r-files').onchange=e=>{importFiles(e.target.files);e.target.value=''};
   $('r-dir').onchange=e=>{importFiles(e.target.files);e.target.value=''};
-  /* « Choisir le dossier » : sur ordinateur, et sur iPhone/iPad (iOS 18.4 et plus) ; pas sur Android, qui ne sait pas choisir un dossier */
-  {const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-   if(window.AndroidLic||(matchMedia('(pointer:coarse)').matches&&!ios))$('r-dir-l').hidden=true}
+  /* « Choisir le dossier » : ordinateur, Chrome sur Android, iPhone/iPad (iOS 18.4+). Pas dans l'appli Android (APK), qui ne sait pas choisir un dossier */
+  if(window.AndroidLic)$('r-dir-l').hidden=true;
   let clearArm=false;
   $('r-clear').onclick=()=>{if(!clearArm){clearArm=true;$('r-clear').textContent='Confirmer : tout effacer';setTimeout(()=>{clearArm=false;$('r-clear').textContent='Effacer les mains importées'},3000);return}
     db={hands:[],sums:{}};persist();clearArm=false;$('r-clear').textContent='Effacer les mains importées';$('r-status').textContent='Mains effacées.';render()};
