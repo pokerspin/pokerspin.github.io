@@ -1106,6 +1106,7 @@ window.PST_PAY=(()=>{
         <input id="r-files" type="file" multiple accept=".txt,.zip,text/plain,application/zip" hidden>
         <label class="ghost" for="r-dir" id="r-dir-l">Choisir le dossier</label>
         <input id="r-dir" type="file" webkitdirectory multiple hidden>
+        <script>if(/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1))document.getElementById('r-files').removeAttribute('accept')</script>
       </div>
       <div class="imp-status" id="r-status" role="status"></div>
     </div>
@@ -1773,6 +1774,30 @@ const RES=(()=>{
   const U=()=>cUnit==='bb'?'BB':'',uR=h=>cUnit==='bb'?(h[4]?h[8]/h[4]:0):h[8],uE=h=>cUnit==='bb'?(h[4]?h[9]/h[4]:0):h[9];
   const fmt=(v,d=0)=>(v>0?'+':v<0?'−':'')+Math.abs(v).toLocaleString('fr-FR',{maximumFractionDigits:d,minimumFractionDigits:d});
   const cls=v=>v>0?'pos':v<0?'neg':'';
+  /* décompression « deflate » sans DecompressionStream (iPhone avant iOS 16.4, vieux navigateurs) */
+  function inflateRaw(d){let ip=0,bb=0,bc=0,out=new Uint8Array(Math.max(1024,d.length*4)),op=0;
+    const bits=n=>{while(bc<n){if(ip>=d.length)throw new Error('eof');bb|=d[ip++]<<bc;bc+=8}const v=bb&((1<<n)-1);bb>>>=n;bc-=n;return v};
+    const grow=n=>{if(op+n>out.length){const o=new Uint8Array(Math.max(out.length*2,op+n));o.set(out.subarray(0,op));out=o}};
+    const build=lens=>{const count=new Uint16Array(16),sym=new Uint16Array(lens.length),offs=new Uint16Array(16);
+      for(const l of lens)count[l]++;count[0]=0;for(let i=1;i<16;i++)offs[i]=offs[i-1]+count[i-1];
+      for(let s=0;s<lens.length;s++)if(lens[s])sym[offs[lens[s]]++]=s;return{count,sym}};
+    const dec=h=>{let code=0,first=0,index=0;for(let len=1;len<16;len++){code|=bits(1);const c=h.count[len];
+      if(code-c<first)return h.sym[index+(code-first)];index+=c;first+=c;first<<=1;code<<=1}throw new Error('code')};
+    const LB=[3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258],LE=[0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0],
+      DB=[1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577],DE=[0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];
+    let last=0;
+    while(!last){last=bits(1);const type=bits(2);
+      if(type===0){bb=0;bc=0;const len=d[ip]|d[ip+1]<<8;ip+=4;grow(len);out.set(d.subarray(ip,ip+len),op);ip+=len;op+=len;continue}
+      let lc,dc;
+      if(type===1){const l=new Uint8Array(288);l.fill(8,0,144);l.fill(9,144,256);l.fill(7,256,280);l.fill(8,280,288);lc=build(l);dc=build(new Uint8Array(30).fill(5))}
+      else if(type===2){const nl=bits(5)+257,nd=bits(5)+1,nc=bits(4)+4,ord=[16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15],cl=new Uint8Array(19);
+        for(let i=0;i<nc;i++)cl[ord[i]]=bits(3);const ch=build(cl),ls=new Uint8Array(nl+nd);
+        for(let i=0;i<nl+nd;){const s=dec(ch);if(s<16)ls[i++]=s;else{let r,v=0;if(s===16){v=ls[i-1];r=3+bits(2)}else if(s===17)r=3+bits(3);else r=11+bits(7);while(r--)ls[i++]=v}}
+        lc=build(ls.subarray(0,nl));dc=build(ls.subarray(nl))}
+      else throw new Error('type');
+      for(;;){const s=dec(lc);if(s<256){grow(1);out[op++]=s}else if(s===256)break;
+        else{const k=s-257,len=LB[k]+bits(LE[k]),ds=dec(dc),dist=DB[ds]+bits(DE[ds]);grow(len);for(let i=0;i<len;i++,op++)out[op]=out[op-dist]}}}
+    return out.subarray(0,op)}
   /* zip reader (stored + deflate) using DecompressionStream */
   async function unzip(buf){
     const dv=new DataView(buf);let eocd=-1;for(let i=buf.byteLength-22;i>=Math.max(0,buf.byteLength-66000);i--)if(dv.getUint32(i,true)===0x06054b50){eocd=i;break}
@@ -1783,7 +1808,8 @@ const RES=(()=>{
       const name=new TextDecoder().decode(new Uint8Array(buf,p+46,nlen));p+=46+nlen+xlen+clen;
       if(name.endsWith('/'))continue;
       const lo=off+30+dv.getUint16(off+26,true)+dv.getUint16(off+28,true);const data=new Uint8Array(buf,lo,csize);
-      let bytes;if(method===0)bytes=data;else if(method===8){const ds=new DecompressionStream('deflate-raw');bytes=new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(ds)).arrayBuffer())}else continue;
+      let bytes;if(method===0)bytes=data;else if(method===8){let ok=false;if(typeof DecompressionStream!=='undefined'){try{const ds=new DecompressionStream('deflate-raw');bytes=new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(ds)).arrayBuffer());ok=true}catch(e){}}
+        if(!ok)bytes=inflateRaw(data)}else continue;
       out.push({name,text:new TextDecoder('utf-8').decode(bytes)})}
     return out;
   }
